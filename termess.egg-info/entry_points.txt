@@ -1,0 +1,2 @@
+[console_scripts]
+termess = client:run

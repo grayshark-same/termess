@@ -1,0 +1,8 @@
+LICENSE
+client.py
+setup.py
+termess.egg-info/PKG-INFO
+termess.egg-info/SOURCES.txt
+termess.egg-info/dependency_links.txt
+termess.egg-info/entry_points.txt
+termess.egg-info/top_level.txt
