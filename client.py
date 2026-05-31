@@ -5,7 +5,8 @@ import json
 from pathlib import Path
 from setuptools import setup
 import argparse
-
+import websockets
+from connections import listen, connect  # правильно
 
 
 
@@ -45,6 +46,8 @@ def load_contacts():
 def contacts_for_completer():
     contacts = dict.fromkeys(tuple(load_contacts()))
     return contacts
+
+
 
 contacts = None
 
@@ -112,8 +115,9 @@ def run():
     parser = argparse.ArgumentParser(prog="termess")
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("start", help="start")
+
     message = subparsers.add_parser("message", help="message")
-    message.add_argument("username", help=f'it can be one of your contact {load_contacts()}')
+    message.add_argument("username",default=None, help=f'it can be one of your contact {load_contacts()}')
     
     add = subparsers.add_parser("add", help="add <username> <ip>")
     add.add_argument("username")
@@ -122,8 +126,19 @@ def run():
     subparsers.add_parser("contacts", help="show contacts")
     subparsers.add_parser("test")
 
+    init = subparsers.add_parser("init")
+    init.add_argument("username", nargs="?", default=None)
+    init.add_argument("port", nargs="?", default=None)
+    
+    listen_cmd = subparsers.add_parser("listen")
+    listen_cmd.add_argument("port", type=int, default=load_config()["port"], nargs="?")
+
+    connect_cmd = subparsers.add_parser("connect")
+    connect_cmd.add_argument("host")
+    connect_cmd.add_argument("port", type=int, default=load_config()["port"], nargs="?")
+    
     args = parser.parse_args()
-    print(args.command)
+    # print(args.command)
     if args.command == "message" or args.command == "start":
         username = args.username if args.command == "message" else None
         # print(username)
@@ -138,3 +153,23 @@ def run():
         print(load_contacts())
     elif args.command == "test":
         print(contacts_for_completer())
+    elif args.command == "init":
+        username = args.username if args.username else input('please, enter your username: ')
+        port = 2727
+        try:
+            port = int(args.port if args.port else input('please, enter port for termess(default 2727): '))
+        except:
+            pass
+        save_config({'username': username, 'port': port})
+    elif args.command == "listen":
+        # try:
+        asyncio.run(listen(args.port))
+        # except:
+        #     print
+    elif args.command == "connect":
+        try:
+            asyncio.run(connect(args.host, args.port))
+            print('connecting')
+        except:
+            pass
+    
