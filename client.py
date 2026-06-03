@@ -44,7 +44,7 @@ def load_contacts():
         with open(BASE_DIR / "contacts.json", "r") as f:
             return json.load(f)
     except:
-        return None
+        return {}
     
 def contacts_for_completer():
     try:
