@@ -4,8 +4,14 @@ Terminal messenger with P2P connection.
 
 ## Installation
 
+**Linux (Debian/Ubuntu, Arch, Fedora)**
+```bash
+curl -sSL https://raw.githubusercontent.com/grayshark-same/termess/main/install.sh | bash
 ```
-pip install git+https://github.com/grayshark-same/termess.git
+
+**Windows**
+```powershell
+irm https://raw.githubusercontent.com/grayshark-same/termess/main/install.ps1 | iex
 ```
 
 ## Setup
