@@ -24,7 +24,17 @@ if ! command -v pip3 &> /dev/null; then
     install_python
 fi
 
-pip3 install git+https://github.com/grayshark-same/termess.git
+if ! command -v pipx &> /dev/null; then
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get install -y pipx
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -Sy --noconfirm python-pipx
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y pipx
+    fi
+fi
+
+pipx install git+https://github.com/grayshark-same/termess.git
 
 export PATH="$HOME/.local/bin:$PATH"
 if ! grep -q '.local/bin' ~/.bashrc; then
