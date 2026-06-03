@@ -3,10 +3,11 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import NestedCompleter 
 import json
 from pathlib import Path
-from setuptools import setup
 import argparse
 import websockets
-from connections import listen, connect  # правильно
+from connections import listen, connect, chat
+BASE_DIR = Path(__file__).parent
+
 
 
 
@@ -14,94 +15,81 @@ first_message = 'welcome_to_termess'
 menu = ''
 DEFAULT_CONFIG = {
     "username": None,
+    "port": 2727
     }
 
 
 
 def save_config(config: dict):
-    with open("config.json", "w") as f:
+    with open(BASE_DIR / "config.json", "w") as f:
         json.dump(config, f, indent=2)
 
 def load_config():
-    if not Path("config.json").exists():
+    if not (BASE_DIR / "config.json").exists():
         save_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG.copy()
-    with open("config.json", "r") as f:
+    with open(BASE_DIR / "config.json", "r") as f:
         return json.load(f)
-    
+
 def save_contact(contact: dict):
     contacts = contact
-    if Path("contacts.json").exists():
+    if (BASE_DIR / "contacts.json").exists():
         contacts = load_contacts()
         contacts.update(contact)
-    with open("contacts.json", "w") as f:
+    with open(BASE_DIR / "contacts.json", "w") as f:
         json.dump(contacts, f, indent=2)
 
 def load_contacts():
     try:
-        with open("contacts.json", "r") as f:
+        with open(BASE_DIR / "contacts.json", "r") as f:
             return json.load(f)
     except:
         return None
+    
 def contacts_for_completer():
-    contacts = dict.fromkeys(tuple(load_contacts()))
-    return contacts
+    try:
+        contacts = dict.fromkeys(tuple(load_contacts()))
+        return contacts
+    except:
+        return None
 
 
 
 contacts = None
 
 completer = NestedCompleter.from_nested_dict({
-    "/message_to": contacts_for_completer(),
+    "/chat": contacts_for_completer(),
     "/quit": None
 })
 
 async def main(username=None):
     print(first_message)
     session = PromptSession(completer=completer)
-    print(username)
+    print(f'trying to connect to {username}...') if username else None
+    if username:
+        try:
+            user = username
+            host = load_contacts()[user]["ip"]
+            port = int(load_contacts()[user]["port"])
+            await connect(host, port, user)
+        except IndexError:
+            print('username is incorrect, please, write: /message_to <username>')
+        username = None
+        
     while True:
         text = await session.prompt_async(">> ") #like input()
-        if username:
-            user = username
-            username = None
-            
-        elif text.startswith('/message_to'):
-            print('a')
+    
+        if text.startswith('/chat'):
             try:
                 user = text.split()[1]
-                print(user)
+                host = load_contacts()[user]["ip"]
+                port = int(load_contacts()[user]["port"])
+                await connect(host, port, user)
             except IndexError:
                 print("please, write: /message_to <username>")
         elif text.startswith('/quit'):
             print('\n termess stopped')
             break
-        #     username = input('please, enter your username: ')
-        #     save_config({'username': username})
-        #     print(f'your username {username}')
-        # elif text.startswith('/help'):
-        #     print(f'there should be guide, but im so lazy')
-        # elif text.startswith('/menu'):
-        #     pass
-        # elif text.startswith('/message'):
-        #     try: 
-        #         _, group, contact = text.split()
-        #         print(group, contact)
-        #     except ValueError: 
-        #         print("please, write: /message <contact>")
-        # elif text.startswith('/peer'):
-        #     try: 
-        #         state = text.split()[1]
-        #         if state == 'add':
-        #             try:
-        #                 contact, ip = text.split()[2:4]
-        #                 save_contact({contact : ip})
-                        
-        #             except ValueError: 
-        #                 print("please, write: /peer add <contact> <ip>")
-                    
-        #     except IndexError: 
-        #         print("please, write: /peer <state>")
         elif text == "/test":
             # global contacts
             # contacts = {'aaa':None}
@@ -116,12 +104,13 @@ def run():
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("start", help="start")
 
-    message = subparsers.add_parser("message", help="message")
-    message.add_argument("username",default=None, help=f'it can be one of your contact {load_contacts()}')
+    chat = subparsers.add_parser("chat", help="open chat")
+    chat.add_argument("username",default=None, help=f'it can be one of your contact {list(load_contacts())}')
     
     add = subparsers.add_parser("add", help="add <username> <ip>")
     add.add_argument("username")
     add.add_argument("ip")
+    add.add_argument("port")
 
     subparsers.add_parser("contacts", help="show contacts")
     subparsers.add_parser("test")
@@ -134,42 +123,48 @@ def run():
     listen_cmd.add_argument("port", type=int, default=load_config()["port"], nargs="?")
 
     connect_cmd = subparsers.add_parser("connect")
-    connect_cmd.add_argument("host")
+    connect_cmd.add_argument("username")
     connect_cmd.add_argument("port", type=int, default=load_config()["port"], nargs="?")
     
     args = parser.parse_args()
     # print(args.command)
-    if args.command == "message" or args.command == "start":
-        username = args.username if args.command == "message" else None
+    if args.command == "chat" or args.command == "start":
+        username = args.username if args.command == "chat" else None
         # print(username)
         try:
             asyncio.run(main(username=username))
         except KeyboardInterrupt:
             print('\n termess stopped')
     elif args.command == "add":
-        save_contact({args.username: args.ip})
-        print(f"добавлен {args.username} -> {args.ip}")
+        try:
+            save_contact({args.username: {'ip': args.ip,
+                                    'port': args.port}})
+        except:
+            pass
     elif args.command == "contacts":
         print(load_contacts())
     elif args.command == "test":
-        print(contacts_for_completer())
+        print(load_contacts()[args.username]["ip"])
     elif args.command == "init":
         username = args.username if args.username else input('please, enter your username: ')
         port = 2727
         try:
-            port = int(args.port if args.port else input('please, enter port for termess(default 2727): '))
+            port = int(args.port if args.port else input(f'please, enter port for termess(default {port}): '))
         except:
             pass
         save_config({'username': username, 'port': port})
     elif args.command == "listen":
-        # try:
-        asyncio.run(listen(args.port))
-        # except:
-        #     print
-    elif args.command == "connect":
         try:
-            asyncio.run(connect(args.host, args.port))
-            print('connecting')
+            asyncio.run(listen(args.port, username))
         except:
             pass
+    elif args.command == "connect":
+        try:
+            username = args.username
+            host = load_contacts()[username]["ip"]
+            port = args.port if args.port else load_contacts()[args.username]["port"]
+            asyncio.run(connect(host=host, port=port, username=username))
+            print('connecting')
+        except ValueError as e:
+            print(e)
     
