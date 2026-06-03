@@ -154,10 +154,11 @@ def run():
             pass
         save_config({'username': username, 'port': port})
     elif args.command == "listen":
+        username = load_config().get("username", "unknown")
         try:
             asyncio.run(listen(args.port, username))
-        except:
-            pass
+        except KeyboardInterrupt:
+            print('\ntermess stopped')
     elif args.command == "connect":
         try:
             username = args.username
