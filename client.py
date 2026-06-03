@@ -6,10 +6,9 @@ from pathlib import Path
 import argparse
 import websockets
 from connections import listen, connect, chat
+import sys 
+
 BASE_DIR = Path(__file__).parent
-
-
-
 
 first_message = 'welcome_to_termess'
 menu = ''
@@ -114,6 +113,7 @@ def run():
 
     subparsers.add_parser("contacts", help="show contacts")
     subparsers.add_parser("test")
+    subparsers.add_parser("update")
 
     init = subparsers.add_parser("init")
     init.add_argument("username", nargs="?", default=None)
@@ -135,6 +135,12 @@ def run():
             asyncio.run(main(username=username))
         except KeyboardInterrupt:
             print('\n termess stopped')
+    elif args.command == "update":
+        import subprocess
+        subprocess.run([
+            sys.executable, "-m", "pip", "install", "--upgrade",
+            "git+https://github.com/grayshark-same/termess.git"
+        ])
     elif args.command == "add":
         try:
             save_contact({args.username: {'ip': args.ip,
