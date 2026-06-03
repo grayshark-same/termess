@@ -42,6 +42,6 @@ async def connect(host, port, username):
         async with websockets.connect(f"ws://{host}:{port}") as ws:
             print("connected")
             await chat(ws, username)
-    except ConnectionRefusedError:
+    except (ConnectionRefusedError, TimeoutError, OSError):
         print("waiting for connecting")
         await listen(port, username)
