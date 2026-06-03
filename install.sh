@@ -26,4 +26,9 @@ fi
 
 pip3 install git+https://github.com/grayshark-same/termess.git
 
+export PATH="$HOME/.local/bin:$PATH"
+if ! grep -q '.local/bin' ~/.bashrc; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+fi
+
 echo "Done! Run: termess init"
