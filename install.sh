@@ -4,11 +4,11 @@ echo "Installing termess..."
 
 install_python() {
     if command -v apt-get &> /dev/null; then
-        sudo apt-get update && sudo apt-get install -y python3 python3-pip
+        [ "$EUID" -eq 0 ] && apt-get install -y python3 python3-pip || sudo apt-get install -y python3 python3-pip
     elif command -v pacman &> /dev/null; then
-        sudo pacman -Sy --noconfirm python python-pip
+        [ "$EUID" -eq 0 ] && pacman -Sy --noconfirm python python-pip || sudo pacman -Sy --noconfirm python python-pip
     elif command -v dnf &> /dev/null; then
-        sudo dnf install -y python3 python3-pip
+        [ "$EUID" -eq 0 ] && dnf install -y python3 python3-pip || sudo dnf install -y python3 python3-pip
     else
         echo "Unsupported distro. Install Python manually: https://python.org"
         exit 1
@@ -20,25 +20,16 @@ if ! command -v python3 &> /dev/null; then
     install_python
 fi
 
-if ! command -v pip3 &> /dev/null; then
-    install_python
-fi
+python3 -m venv ~/.termess-venv
+~/.termess-venv/bin/pip install git+https://github.com/grayshark-same/termess.git
 
-if ! command -v pipx &> /dev/null; then
-    if command -v apt-get &> /dev/null; then
-        sudo apt-get install -y pipx
-    elif command -v pacman &> /dev/null; then
-        sudo pacman -Sy --noconfirm python-pipx
-    elif command -v dnf &> /dev/null; then
-        sudo dnf install -y pipx
-    fi
-fi
+mkdir -p ~/.local/bin
+ln -sf ~/.termess-venv/bin/termess ~/.local/bin/termess
 
-pipx install git+https://github.com/grayshark-same/termess.git
-
-export PATH="$HOME/.local/bin:$PATH"
 if ! grep -q '.local/bin' ~/.bashrc; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 fi
+
+export PATH="$HOME/.local/bin:$PATH"
 
 echo "Done! Run: termess init"
