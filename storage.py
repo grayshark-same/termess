@@ -31,6 +31,15 @@ def save_contact(contact: dict):
     with open(BASE_DIR / "contacts.json", "w") as f:
         json.dump(contacts, f, indent=2)
 
+def remove_contact(username: str):
+    contacts = load_contacts()
+    if username in contacts:
+        del contacts[username]
+        with open(BASE_DIR / "contacts.json", "w") as f:
+            json.dump(contacts, f, indent=2)
+    else:
+        print(f"{username} not found")
+
 def load_contacts():
     try:
         with open(BASE_DIR / "contacts.json", "r") as f:

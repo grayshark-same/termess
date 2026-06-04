@@ -89,6 +89,9 @@ def run():
     chat = subparsers.add_parser("chat", help="open chat")
     chat.add_argument("username",default=None, help=f'it can be one of your contact {list(load_contacts())}')
     
+    remove = subparsers.add_parser("remove", aliases=["rm"], help="add <username> <ip>")
+    remove.add_argument("username", default=None, nargs="?")
+
     add = subparsers.add_parser("add", help="add <username> <ip>")
     add.add_argument("username", default=None, nargs="?")
     add.add_argument("ip", default=None, nargs="?")
@@ -126,14 +129,18 @@ def run():
             "install", "--force-reinstall",
             "git+https://github.com/grayshark-same/termess.git"
         ])
+    elif args.command in ["remove", 'rm'] :
+        try:
+            username = args.username if args.username else input('please, enter username: ')
+            remove_contact(username)
+        except:
+            pass
     elif args.command == "add":
         try:
             username = args.username if args.username else input('please, enter username: ')
             ip = args.ip if args.ip else input('please, enter ipv4 of your contact: ')
-            while True:
+            while not is_ipv4(ip):
                 ip = input('please, enter correct ipv4 of your contact: ')
-                if is_ipv4(ip):
-                    break
                 
             port = 2727
             port = int(args.port if args.port else input(f'please, enter port for your contact(default {port}): '))
