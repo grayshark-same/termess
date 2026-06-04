@@ -146,11 +146,11 @@ def run():
             port = int(args.port if args.port else input(f'please, enter port for your contact(default {port}): '))
             pub_key = args.pubkey 
            
-            save_contact({username: {'ip': args.ip,
+            save_contact({username: {'ip': ip,
                                     'port': port,
                                     'pub_key': pub_key}})
         except:
-            pass
+            print('something went wrong')
     elif args.command == "contacts":
         print(load_contacts())
     elif args.command == "test":
