@@ -6,6 +6,7 @@ setup(
     install_requires=[
         "websockets",
         "prompt_toolkit",
+        "pynacl",
     ],
     entry_points={
         "console_scripts": [

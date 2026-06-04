@@ -122,7 +122,8 @@ def run():
     elif args.command == "update":
         import subprocess
         subprocess.run([
-            sys.executable, "-m", "pip", "install", "--upgrade",
+            str(Path(sys.executable).parent / "pip"),
+            "install", "--force-reinstall",
             "git+https://github.com/grayshark-same/termess.git"
         ])
     elif args.command == "add":
