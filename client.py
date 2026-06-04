@@ -7,43 +7,17 @@ import argparse
 import websockets
 from connections import listen, connect, chat
 import sys 
+from nacl.public import PrivateKey, PublicKey, Box
+import ipaddress
+import base64
+from storage import *
 
-BASE_DIR = Path(__file__).parent
 
 first_message = 'welcome_to_termess'
 menu = ''
-DEFAULT_CONFIG = {
-    "username": None,
-    "port": 2727
-    }
 
 
 
-def save_config(config: dict):
-    with open(BASE_DIR / "config.json", "w") as f:
-        json.dump(config, f, indent=2)
-
-def load_config():
-    if not (BASE_DIR / "config.json").exists():
-        save_config(DEFAULT_CONFIG)
-        return DEFAULT_CONFIG.copy()
-    with open(BASE_DIR / "config.json", "r") as f:
-        return json.load(f)
-
-def save_contact(contact: dict):
-    contacts = contact
-    if (BASE_DIR / "contacts.json").exists():
-        contacts = load_contacts()
-        contacts.update(contact)
-    with open(BASE_DIR / "contacts.json", "w") as f:
-        json.dump(contacts, f, indent=2)
-
-def load_contacts():
-    try:
-        with open(BASE_DIR / "contacts.json", "r") as f:
-            return json.load(f)
-    except:
-        return {}
     
 def contacts_for_completer():
     try:
@@ -53,6 +27,15 @@ def contacts_for_completer():
         return None
 
 
+def is_ipv4(ip_str):
+    try:
+        # Пытаемся создать объект IP
+        ip_obj = ipaddress.ip_address(ip_str)
+        # Проверяем версию (IPv4 имеет версию 4)
+        return ip_obj.version == 4
+    except ValueError:
+        # Ошибка возникает, если строка не является валидным IP
+        return False
 
 contacts = None
 
@@ -107,9 +90,10 @@ def run():
     chat.add_argument("username",default=None, help=f'it can be one of your contact {list(load_contacts())}')
     
     add = subparsers.add_parser("add", help="add <username> <ip>")
-    add.add_argument("username")
-    add.add_argument("ip")
-    add.add_argument("port")
+    add.add_argument("username", default=None, nargs="?")
+    add.add_argument("ip", default=None, nargs="?")
+    add.add_argument("port", default=None, nargs="?")
+    add.add_argument("pubkey", default=None, nargs="?")
 
     subparsers.add_parser("contacts", help="show contacts")
     subparsers.add_parser("test")
@@ -143,14 +127,26 @@ def run():
         ])
     elif args.command == "add":
         try:
-            save_contact({args.username: {'ip': args.ip,
-                                    'port': args.port}})
+            username = args.username if args.username else input('please, enter username: ')
+            ip = args.ip if args.ip else input('please, enter ipv4 of your contact: ')
+            while True:
+                ip = input('please, enter correct ipv4 of your contact: ')
+                if is_ipv4(ip):
+                    break
+                
+            port = 2727
+            port = int(args.port if args.port else input(f'please, enter port for your contact(default {port}): '))
+            pub_key = args.pubkey 
+           
+            save_contact({username: {'ip': args.ip,
+                                    'port': port,
+                                    'pub_key': pub_key}})
         except:
             pass
     elif args.command == "contacts":
         print(load_contacts())
     elif args.command == "test":
-        print(load_contacts()[args.username]["ip"])
+        print(get_keys())
     elif args.command == "init":
         username = args.username if args.username else input('please, enter your username: ')
         port = 2727
@@ -158,7 +154,11 @@ def run():
             port = int(args.port if args.port else input(f'please, enter port for termess(default {port}): '))
         except:
             pass
-        save_config({'username': username, 'port': port})
+        priv_key = PrivateKey.generate()
+        pub_key = priv_key.public_key
+        pub_key_str = base64.b64encode(bytes(pub_key)).decode()
+        priv_key_str = base64.b64encode(bytes(priv_key)).decode()
+        save_config({'username': username, 'port': port, 'pub_key': pub_key_str, "priv_key": priv_key_str})
     elif args.command == "listen":
         username = load_config().get("username", "unknown")
         try:

@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="termess",
-    py_modules=["client", "connections"],
+    py_modules=["client", "connections", 'storage'],
     install_requires=[
         "websockets",
         "prompt_toolkit",
