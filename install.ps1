@@ -2,13 +2,14 @@ Write-Host "Installing termess..."
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
     Write-Host "Python not found, installing..."
-    winget install Python.Python.3 --silent
-    # обновить PATH после установки
+    $installer = "$env:TEMP\python_installer.exe"
+    Invoke-WebRequest "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe" -OutFile $installer
+    Start-Process $installer -ArgumentList "/quiet InstallAllUsers=0 PrependPath=1" -Wait
     $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
 }
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-    Write-Host "Python still not found. Install manually: https://python.org"
+    Write-Host "Failed to install Python. Install manually: https://python.org"
     exit 1
 }
 
