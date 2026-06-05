@@ -4,12 +4,22 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
     Write-Host "Python not found, installing..."
     $installer = "$env:TEMP\python_installer.exe"
     Invoke-WebRequest "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe" -OutFile $installer
-    Start-Process $installer -ArgumentList "/quiet InstallAllUsers=0 PrependPath=1" -Wait
-    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    $result = Start-Process $installer -ArgumentList "/quiet InstallAllUsers=0 PrependPath=1" -Wait -PassThru
+    if ($result.ExitCode -ne 0) {
+        Write-Host "Failed to install Python. Install manually: https://python.org"
+        exit 1
+    }
+    # найти python после установки
+    $pythonPath = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python" -Recurse -Filter "python.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($pythonPath) {
+        $env:PATH = "$($pythonPath.DirectoryName);$env:PATH"
+    } else {
+        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    }
 }
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-    Write-Host "Failed to install Python. Install manually: https://python.org"
+    Write-Host "Python not found after install. Restart terminal and run the script again."
     exit 1
 }
 
