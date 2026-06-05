@@ -151,7 +151,7 @@ def run():
                 pass
             pub_key = args.pubkey 
            
-            save_contact({username: {'ip': args.ip,
+            save_contact({username: {'ip': ip,
                                     'port': port,
                                     'pub_key': pub_key}})
         except:
