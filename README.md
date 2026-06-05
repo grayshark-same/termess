@@ -12,7 +12,7 @@ source ~/.bashrc
 
 **Windows**
 ```powershell
-irm https://raw.githubusercontent.com/grayshark-same/termess/main/install.ps1 | iex
+Invoke-RestMethod "https://raw.githubusercontent.com/grayshark-same/termess/main/install.ps1" -OutFile install.ps1; .\install.ps1
 ```
 
 ## Setup
