@@ -1,6 +1,6 @@
 Write-Host "Installing termess..."
 
-if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+if (-not (Get-Command py -ErrorAction SilentlyContinue)) {
     Write-Host "Python not found, installing..."
     $installer = "$env:TEMP\python_installer.exe"
     Invoke-WebRequest "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe" -OutFile $installer
@@ -18,13 +18,13 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
     }
 }
 
-if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+if (-not (Get-Command py -ErrorAction SilentlyContinue)) {
     Write-Host "Python not found after install. Restart terminal and run the script again."
     exit 1
 }
 
 $venv = "$HOME\.termess-venv"
-python -m venv $venv
+py -m venv $venv
 
 if (-not (Test-Path "$venv\Scripts\pip.exe")) {
     Write-Host "Failed to create venv"
