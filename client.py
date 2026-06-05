@@ -11,6 +11,7 @@ from nacl.public import PrivateKey, PublicKey, Box
 import ipaddress
 import base64
 from storage import *
+import urllib.request
 
 
 first_message = 'welcome_to_termess'
@@ -102,6 +103,8 @@ def run():
     subparsers.add_parser("test")
     subparsers.add_parser("update")
 
+    subparsers.add_parser("ip", help="show your ip")
+
     init = subparsers.add_parser("init")
     init.add_argument("username", nargs="?", default=None)
     init.add_argument("port", nargs="?", default=None)
@@ -156,7 +159,11 @@ def run():
                                     'pub_key': pub_key}})
         except:
             print('something went wrong')
+    elif args.command == "ip":
+        ip = urllib.request.urlopen('https://ifconfig.me').read().decode()
+        print(ip)        
     elif args.command == "contacts":
+        
         print(load_contacts())
     elif args.command == "test":
         print(get_keys())
