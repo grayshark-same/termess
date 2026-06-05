@@ -1,10 +1,16 @@
 Write-Host "Installing termess..."
 
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "Run as Administrator for Python installation"
+    Start-Process powershell -ArgumentList "-File `"$PSCommandPath`"" -Verb RunAs -Wait
+    exit
+}
+
 if (-not (Get-Command py -ErrorAction SilentlyContinue)) {
     Write-Host "Python not found, installing..."
     $installer = "$env:TEMP\python_installer.exe"
     Invoke-WebRequest "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe" -OutFile $installer
-    $result = Start-Process $installer -ArgumentList "/quiet InstallAllUsers=0 PrependPath=1" -Wait -PassThru
+    $result = Start-Process $installer -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1 Include_launcher=1 Include_pip=1 Include_test=0" -Wait -PassThru
     if ($result.ExitCode -ne 0) {
         Write-Host "Failed to install Python. Install manually: https://python.org"
         exit 1
