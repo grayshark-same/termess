@@ -143,10 +143,15 @@ def run():
                 ip = input('please, enter correct ipv4 of your contact: ')
                 
             port = 2727
-            port = int(args.port if args.port else input(f'please, enter port for your contact(default {port}): '))
+            try:
+                port_input = args.port if args.port else input(f'please, enter port for your contact(default {port}): ')
+                if port_input:
+                    port = int(port_input)
+            except ValueError:
+                pass
             pub_key = args.pubkey 
            
-            save_contact({username: {'ip': ip,
+            save_contact({username: {'ip': args.ip,
                                     'port': port,
                                     'pub_key': pub_key}})
         except:
