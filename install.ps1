@@ -37,7 +37,7 @@ if (-not (Test-Path "$venv\Scripts\pip.exe")) {
     exit 1
 }
 
-& "$venv\Scripts\pip" install git+https://github.com/grayshark-same/termess.git
+& "$venv\Scripts\pip" install https://github.com/grayshark-same/termess/archive/refs/heads/main.zip
 
 $localBin = "$HOME\.local\bin"
 New-Item -ItemType Directory -Force -Path $localBin | Out-Null
