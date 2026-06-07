@@ -48,6 +48,10 @@ sudo ufw allow 2727
 | `/chat <username>` | Start chat with contact |
 | `/quit` | Exit chat |
 
+## NAT Warning
+
+For P2P to work, the listening side must have a real external IP (not behind CGNAT). Check with your ISP if you have a "white IP". If both sides are behind NAT — use a VPN like Tailscale/ZeroTier.
+
 ## How it works
 
 Both users run `termess chat <username>`. The first one becomes the server and waits — the second connects automatically. Keys are exchanged automatically on connect, all messages are encrypted end-to-end.

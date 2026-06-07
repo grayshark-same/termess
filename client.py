@@ -10,8 +10,10 @@ import sys
 from nacl.public import PrivateKey, PublicKey, Box
 import ipaddress
 import base64
+import time
 from storage import *
 import urllib.request
+from datetime import datetime, timezone, timedelta
 
 
 first_message = 'welcome_to_termess'
@@ -30,12 +32,9 @@ def contacts_for_completer():
 
 def is_ipv4(ip_str):
     try:
-        # Пытаемся создать объект IP
         ip_obj = ipaddress.ip_address(ip_str)
-        # Проверяем версию (IPv4 имеет версию 4)
         return ip_obj.version == 4
     except ValueError:
-        # Ошибка возникает, если строка не является валидным IP
         return False
 
 contacts = None
@@ -108,6 +107,7 @@ def run():
     init = subparsers.add_parser("init")
     init.add_argument("username", nargs="?", default=None)
     init.add_argument("port", nargs="?", default=None)
+    init.add_argument("timezone", nargs="?", default=None)
     
     listen_cmd = subparsers.add_parser("listen")
     listen_cmd.add_argument("port", type=int, default=load_config()["port"], nargs="?")
@@ -163,10 +163,9 @@ def run():
         ip = urllib.request.urlopen('https://ifconfig.me').read().decode()
         print(ip)        
     elif args.command == "contacts":
-        
         print(load_contacts())
     elif args.command == "test":
-        print(get_keys())
+        print(int(time.time()))
     elif args.command == "init":
         username = args.username if args.username else input('please, enter your username: ')
         port = 2727
@@ -174,11 +173,16 @@ def run():
             port = int(args.port if args.port else input(f'please, enter port for termess(default {port}): '))
         except:
             pass
+        try:
+            tz = int(args.timezone if args.timezone else input(f'please, enter your timezone (UTC+-X): '))
+        except:
+            tz = 0
+        # tz = timezone(timedelta(hours=hours))
         priv_key = PrivateKey.generate()
         pub_key = priv_key.public_key
         pub_key_str = base64.b64encode(bytes(pub_key)).decode()
         priv_key_str = base64.b64encode(bytes(priv_key)).decode()
-        save_config({'username': username, 'port': port, 'pub_key': pub_key_str, "priv_key": priv_key_str})
+        save_config({'username': username, 'port': port, 'pub_key': pub_key_str, "priv_key": priv_key_str, 'tz': tz})
     elif args.command == "listen":
         username = load_config().get("username", "unknown")
         try:

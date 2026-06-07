@@ -5,6 +5,10 @@ from nacl.public import PrivateKey, PublicKey, Box
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 from storage import *
+from prompt_toolkit.completion import NestedCompleter 
+import time
+from datetime import datetime, timezone, timedelta
+import json
 
 async def exchange_keys(ws):
     # загрузить свой приватный ключ
@@ -16,14 +20,20 @@ async def exchange_keys(ws):
     return Box(my_priv_key, their_pub_key)
 
 async def chat(ws, username, box):
-    session = PromptSession()
+    completer = NestedCompleter.from_nested_dict({
+        "/quit": None
+    })
+    session = PromptSession(completer=completer)
     stop = asyncio.Event()
 
     async def receive():
         try:
-            async for msg in ws:
-                decrypted = box.decrypt(base64.b64decode(msg)).decode()
-                print(f"{username}: {decrypted}")
+            async for raw in ws:
+                msg = json.loads(raw)
+                decrypted = box.decrypt(base64.b64decode(msg['text'])).decode()
+                tz = timezone(timedelta(hours=int(load_config().get('tz', 0))))
+                dt = datetime.fromtimestamp(msg["timestamp"], tz=tz)
+                print(f"[{dt.strftime('%H:%M')}] {username or msg['from']}: {decrypted}")
         except websockets.exceptions.ConnectionClosedError:
             print(f"\n{username} disconnected")
 
@@ -37,7 +47,12 @@ async def chat(ws, username, box):
                         stop.set()
                         return
                     encrypted = base64.b64encode(box.encrypt(text.encode())).decode()
-                    await ws.send(encrypted)
+                    msg = {'type': 'message',
+                           "from": load_config().get('username', 'anon'),
+                           'text': encrypted,
+                           'timestamp': int(time.time())
+                           }
+                    await ws.send(json.dumps(msg))
             except KeyboardInterrupt:
                 stop.set()
     await asyncio.gather(receive(), send())

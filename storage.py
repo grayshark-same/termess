@@ -10,6 +10,7 @@ DEFAULT_CONFIG = {
     "port": 2727,
     "pub_key": None,
     "priv_key": None,
+    'tz': None
 }
 
 def save_config(config: dict):
