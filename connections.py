@@ -34,7 +34,7 @@ async def chat(ws, username, box):
                 tz = timezone(timedelta(hours=int(load_config().get('tz', 0))))
                 dt = datetime.fromtimestamp(msg["timestamp"], tz=tz)
                 print(f"[{dt.strftime('%H:%M')}] {username or msg['from']}: {decrypted}")
-                print(f"debug: timestamp={msg['timestamp']}, tz={load_config().get('tz')}")
+                # print(f"debug: timestamp={msg['timestamp']}, tz={load_config().get('tz')}")
         except websockets.exceptions.ConnectionClosedError:
             print(f"\n{username} disconnected")
 
