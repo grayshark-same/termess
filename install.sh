@@ -4,7 +4,7 @@ echo "Installing termess..."
 
 install_python() {
     if command -v apt-get &> /dev/null; then
-        [ "$EUID" -eq 0 ] && apt-get install -y python3 python3-pip || sudo apt-get install -y python3 python3-pip
+        [ "$EUID" -eq 0 ] && apt-get install -y python3 python3-pip python3-venv || sudo apt-get install -y python3 python3-pip python3-venv
     elif command -v pacman &> /dev/null; then
         [ "$EUID" -eq 0 ] && pacman -Sy --noconfirm python python-pip || sudo pacman -Sy --noconfirm python python-pip
     elif command -v dnf &> /dev/null; then
@@ -18,6 +18,10 @@ install_python() {
 if ! command -v python3 &> /dev/null; then
     echo "Python not found, installing..."
     install_python
+fi
+
+if command -v apt-get &> /dev/null; then
+    [ "$EUID" -eq 0 ] && apt-get install -y python3-venv || sudo apt-get install -y python3-venv
 fi
 
 python3 -m venv ~/.termess-venv
