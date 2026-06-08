@@ -55,25 +55,23 @@ def get_keys():
     pub_key = PublicKey(base64.b64decode(conf['pub_key']))
     return (pub_key, priv_key)
 
-def add_contact(Type="client", un=None, ip=None, port=2727):
+def add_contact(Type="client", un=None, ip=None, port=None):
     try:
-        if Type == 'client':
+        if Type in ['client', 'server']:
+            text ={'client': '', 'server': 'server with '}
             username = un or input('please, enter username: ')
-            Ip = ip or input('please, enter ipv4 of your contact: ')
+            Ip = ip or input(f'please, enter ipv4 of {text[Type]}your contact: ')
             while not is_ipv4(Ip):
-                Ip = input('please, enter correct ipv4 of your contact: ')
+                Ip = input(f'please, enter correct ipv4 of {text[Type]}your contact: ')
             try:
-                Port = port or input(f'please, enter port for your contact(default 2727): ') or 2727
+                Port = port or input(f'please, enter port for {text[Type]}your contact(default 2727): ') or 2727
             except ValueError:
                 pass
         
             save_contact({username: {'ip': Ip,
                                     'port': Port,
-                                    'type': type}})
-        elif Type == 'server':
-            print('comming soon')
+                                    'type': Type}})
         else:
-            print(Type)
             print('please, write add <type of connection(client/server)>')
     except:
         print('something went wrong')

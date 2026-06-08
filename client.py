@@ -140,7 +140,7 @@ def run():
         except:
             pass
     elif args.command == "add":
-        add_contact(type=args.type_of_connection, un=args.username, ip=args.ip, port=args.port)
+        add_contact(Type=args.type_of_connection, un=args.username, ip=args.ip, port=args.port)
     elif args.command == "ip":
         ip = urllib.request.urlopen('https://ifconfig.me').read().decode()
         print(ip)        
