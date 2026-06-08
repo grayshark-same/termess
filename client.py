@@ -14,7 +14,7 @@ import time
 from storage import *
 import urllib.request
 from datetime import datetime, timezone, timedelta
-
+from prompt_toolkit.patch_stdout import patch_stdout
 
 first_message = 'welcome_to_termess'
 menu = ''
@@ -30,17 +30,11 @@ def contacts_for_completer():
         return None
 
 
-def is_ipv4(ip_str):
-    try:
-        ip_obj = ipaddress.ip_address(ip_str)
-        return ip_obj.version == 4
-    except ValueError:
-        return False
-
 contacts = None
 
 completer = NestedCompleter.from_nested_dict({
     "/chat": contacts_for_completer(),
+    "/add": {'client':None, 'server':None},
     "/quit": None
 })
 
@@ -57,26 +51,30 @@ async def main(username=None):
         except IndexError:
             print('username is incorrect, please, write: /message_to <username>')
         username = None
+
+    with patch_stdout(): 
+        while True:
+            text = await session.prompt_async(">> ") #like input()
         
-    while True:
-        text = await session.prompt_async(">> ") #like input()
-    
-        if text.startswith('/chat'):
-            try:
-                user = text.split()[1]
-                host = load_contacts()[user]["ip"]
-                port = int(load_contacts()[user]["port"])
-                await connect(host, port, user)
-            except IndexError:
-                print("please, write: /message_to <username>")
-        elif text.startswith('/quit'):
-            print('\n termess stopped')
-            break
-        elif text == "/test":
-            # global contacts
-            # contacts = {'aaa':None}
-            pass
-        
+            if text.startswith('/chat'):
+                try:
+                    user = text.split()[1]
+                    host = load_contacts()[user]["ip"]
+                    port = int(load_contacts()[user]["port"])
+                    await connect(host, port, user)
+                except IndexError:
+                    print("please, write: /message_to <username>")
+            elif text.startswith('/quit'):
+                print('\n termess stopped')
+                break
+            elif text.startswith("/add"):
+                splitted = text.split()
+                add_contact(Type=splitted[1])
+            elif text == "/test":
+                # global contacts
+                # contacts = {'aaa':None}
+                pass
+            
             
 
         
@@ -92,11 +90,11 @@ def run():
     remove = subparsers.add_parser("remove", aliases=["rm"], help="add <username> <ip>")
     remove.add_argument("username", default=None, nargs="?")
 
-    add = subparsers.add_parser("add", help="add <username> <ip>")
+    add = subparsers.add_parser("add", help="add <type of connection(client/server)> <username> <ip> <port>")
+    add.add_argument("type_of_connection", help='type of connection(client/server)')
     add.add_argument("username", default=None, nargs="?")
     add.add_argument("ip", default=None, nargs="?")
     add.add_argument("port", default=None, nargs="?")
-    add.add_argument("pubkey", default=None, nargs="?")
 
     subparsers.add_parser("contacts", help="show contacts")
     subparsers.add_parser("test")
@@ -116,6 +114,9 @@ def run():
     connect_cmd.add_argument("username")
     connect_cmd.add_argument("port", type=int, default=load_config()["port"], nargs="?")
     
+    server_cmd = subparsers.add_parser("server", help="start server")
+    server_cmd.add_argument("port", type=int, default=None, nargs="?")
+
     args = parser.parse_args()
     # print(args.command)
     if args.command == "chat" or args.command == "start":
@@ -139,26 +140,7 @@ def run():
         except:
             pass
     elif args.command == "add":
-        try:
-            username = args.username if args.username else input('please, enter username: ')
-            ip = args.ip if args.ip else input('please, enter ipv4 of your contact: ')
-            while not is_ipv4(ip):
-                ip = input('please, enter correct ipv4 of your contact: ')
-                
-            port = 2727
-            try:
-                port_input = args.port if args.port else input(f'please, enter port for your contact(default {port}): ')
-                if port_input:
-                    port = int(port_input)
-            except ValueError:
-                pass
-            pub_key = args.pubkey 
-           
-            save_contact({username: {'ip': ip,
-                                    'port': port,
-                                    'pub_key': pub_key}})
-        except:
-            print('something went wrong')
+        add_contact(type=args.type_of_connection, un=args.username, ip=args.ip, port=args.port)
     elif args.command == "ip":
         ip = urllib.request.urlopen('https://ifconfig.me').read().decode()
         print(ip)        
@@ -198,4 +180,11 @@ def run():
             print('connecting')
         except ValueError as e:
             print(e)
+    elif args.command == "server":
+        port = args.port or input('please, enter port(default:2727): ') or 2727
+        from server import main as server_main
+        try:
+            asyncio.run(server_main(port))
+        except KeyboardInterrupt:
+            print('\nserver stopped')
     

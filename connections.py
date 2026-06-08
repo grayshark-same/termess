@@ -50,6 +50,7 @@ async def chat(ws, username, box):
                     encrypted = base64.b64encode(box.encrypt(text.encode())).decode()
                     msg = {'type': 'message',
                            "from": load_config().get('username', 'anon'),
+                           'to': username,
                            'text': encrypted,
                            'timestamp': int(time.time())
                            }

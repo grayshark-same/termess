@@ -2,6 +2,7 @@ import json
 import base64
 from pathlib import Path
 from nacl.public import PrivateKey, PublicKey
+import ipaddress
 
 BASE_DIR = Path(__file__).parent
 
@@ -53,3 +54,33 @@ def get_keys():
     priv_key = PrivateKey(base64.b64decode(conf['priv_key']))
     pub_key = PublicKey(base64.b64decode(conf['pub_key']))
     return (pub_key, priv_key)
+
+def add_contact(Type="client", un=None, ip=None, port=2727):
+    try:
+        if Type == 'client':
+            username = un or input('please, enter username: ')
+            Ip = ip or input('please, enter ipv4 of your contact: ')
+            while not is_ipv4(Ip):
+                Ip = input('please, enter correct ipv4 of your contact: ')
+            try:
+                Port = port or input(f'please, enter port for your contact(default 2727): ') or 2727
+            except ValueError:
+                pass
+        
+            save_contact({username: {'ip': Ip,
+                                    'port': Port,
+                                    'type': type}})
+        elif Type == 'server':
+            print('comming soon')
+        else:
+            print(Type)
+            print('please, write add <type of connection(client/server)>')
+    except:
+        print('something went wrong')
+
+def is_ipv4(ip_str):
+    try:
+        ip_obj = ipaddress.ip_address(ip_str)
+        return ip_obj.version == 4
+    except ValueError:
+        return False

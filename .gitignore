@@ -3,4 +3,3 @@ contacts.json
 venv/
 __pycache__/
 *.egg-info/
-server.py
