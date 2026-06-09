@@ -127,7 +127,7 @@ async def connect_server(host, port, to):
     except KeyError:
         print('')
     except:
-        print('cannot connect to server')
+        print(f'cannot connect to server: ')
 async def connect(host, port, username):
     try:
         async with websockets.connect(f"ws://{host}:{port}") as ws:
