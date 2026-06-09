@@ -60,6 +60,41 @@ async def chat(ws, username, box):
     await asyncio.gather(receive(), send())
 
 
+async def chat_server(ws, to, box):
+    session = PromptSession()
+
+    async def receive():
+        try:
+            async for raw in ws:
+                msg = json.loads(raw)
+                if "error" in msg:
+                    print(f"[!] {msg['error']}")
+                else:
+                    decrypted = box.decrypt(base64.b64decode(msg["text"])).decode()
+                    tz = timezone(timedelta(hours=int(load_config().get('tz', 0))))
+                    dt = datetime.fromtimestamp(msg["timestamp"], tz=tz)
+                    print(f"[{dt.strftime('%H:%M')}] {msg['from']}: {decrypted}")
+        except websockets.exceptions.ConnectionClosedError:
+            print("\ndisconnected from server")
+
+    async def send():
+        with patch_stdout():
+            while True:
+                text = await session.prompt_async("> ")
+                if text.startswith('/quit'):
+                    return
+                encrypted = base64.b64encode(box.encrypt(text.encode())).decode()
+                msg = {
+                    "to": to,
+                    "from": load_config().get('username'),
+                    "text": encrypted,
+                    "timestamp": int(time.time())
+                }
+                await ws.send(json.dumps(msg))
+
+    await asyncio.gather(receive(), send())
+
+
 async def listen(port, username):
     async def handler(ws):
         box = await exchange_keys(ws)
@@ -69,6 +104,23 @@ async def listen(port, username):
         # print(f"listening port {port}...")
         await asyncio.Future()
 
+async def connect_server(host, port, to):
+    my_pub, my_priv = get_keys()
+    me = load_config()["username"]
+    
+    async with websockets.connect(f"ws://{host}:{port}") as ws:
+        await ws.send(json.dumps({
+            "action": "register",
+            "from": me,
+            "pub_key": base64.b64encode(bytes(my_pub)).decode()
+        }))
+        
+        await ws.send(json.dumps({"action": "get_key", "username": to}))
+        resp = json.loads(await ws.recv())
+        their_pub = PublicKey(base64.b64decode(resp["pub_key"]))
+        box = Box(my_priv, their_pub)
+        
+        await chat_server(ws, to, box)
 
 async def connect(host, port, username):
     try:
