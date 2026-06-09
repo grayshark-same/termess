@@ -107,21 +107,27 @@ async def listen(port, username):
 async def connect_server(host, port, to):
     my_pub, my_priv = get_keys()
     me = load_config()["username"]
-    
-    async with websockets.connect(f"ws://{host}:{port}") as ws:
-        await ws.send(json.dumps({
-            "action": "register",
-            "from": me,
-            "pub_key": base64.b64encode(bytes(my_pub)).decode()
-        }))
-        
-        await ws.send(json.dumps({"action": "get_key", "username": to}))
-        resp = json.loads(await ws.recv())
-        their_pub = PublicKey(base64.b64decode(resp["pub_key"]))
-        box = Box(my_priv, their_pub)
-        
-        await chat_server(ws, to, box)
-
+    try:
+        async with websockets.connect(f"ws://{host}:{port}") as ws:
+            await ws.send(json.dumps({
+                "action": "register",
+                "from": me,
+                "pub_key": base64.b64encode(bytes(my_pub)).decode()
+            }))
+            
+            await ws.send(json.dumps({"action": "get_key", "username": to}))
+            resp = json.loads(await ws.recv())
+            if "error" in resp:
+                print(f"[!] {resp['error']}")
+                return
+            their_pub = PublicKey(base64.b64decode(resp["pub_key"]))
+            box = Box(my_priv, their_pub)
+            
+            await chat_server(ws, to, box)
+    except KeyError:
+        print('')
+    except:
+        print('cannot connect to server')
 async def connect(host, port, username):
     try:
         async with websockets.connect(f"ws://{host}:{port}") as ws:
