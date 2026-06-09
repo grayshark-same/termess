@@ -125,7 +125,7 @@ async def connect_server(host, port, to):
             
             await chat_server(ws, to, box)
     except KeyError:
-        print('')
+        print('something went wrong')
     except Exception as e:
         print(f'cannot connect to server: {e}')
 async def connect(host, port, username):

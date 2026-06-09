@@ -1,10 +1,26 @@
 import asyncio
 import websockets
 import json
+from pathlib import Path
 
-clients = {}   # username -> ws
-pub_keys = {}  # username -> pub_key
-queue = {}     # username -> [messages]
+BASE_DIR = Path(__file__).parent
+KEYS_FILE = BASE_DIR / "server_keys.json"
+QUEUE_FILE = BASE_DIR / "server_queue.json"
+
+clients = {}  # username -> ws
+
+def load_json(path):
+    if path.exists():
+        with open(path) as f:
+            return json.load(f)
+    return {}
+
+def save_json(path, data):
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+
+pub_keys = load_json(KEYS_FILE)
+queue = load_json(QUEUE_FILE)
 
 async def handler(ws):
     username = None
@@ -17,10 +33,13 @@ async def handler(ws):
             return
         username = msg["from"]
         pub_keys[username] = msg["pub_key"]
+        save_json(KEYS_FILE, pub_keys)
         clients[username] = ws
         print(f"{username} connected")
         for queued in queue.pop(username, []):
             await ws.send(json.dumps(queued))
+        if username in queue:
+            save_json(QUEUE_FILE, queue)
 
         async for raw in ws:
             msg = json.loads(raw)
@@ -35,9 +54,14 @@ async def handler(ws):
             elif "to" in msg:
                 to = msg["to"]
                 if to in clients:
-                    await clients[to].send(raw)
+                    try:
+                        await clients[to].send(raw)
+                    except websockets.exceptions.ConnectionClosed:
+                        queue.setdefault(to, []).append(msg)
+                        save_json(QUEUE_FILE, queue)
                 else:
                     queue.setdefault(to, []).append(msg)
+                    save_json(QUEUE_FILE, queue)
     finally:
         if username and username in clients:
             del clients[username]
