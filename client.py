@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import argparse
 import websockets
-from connections import listen, connect, chat
+from connections import listen, connect, connect_server, chat
 import sys 
 from nacl.public import PrivateKey, PublicKey, Box
 import ipaddress
@@ -45,23 +45,31 @@ async def main(username=None):
     if username:
         try:
             user = username
-            host = load_contacts()[user]["ip"]
-            port = int(load_contacts()[user]["port"])
-            await connect(host, port, user)
+            contact = load_contacts()[user]
+            host = contact["ip"]
+            port = int(contact["port"])
+            if contact.get("type") == "server":
+                await connect_server(host, port, user)
+            else:
+                await connect(host, port, user)
         except IndexError:
             print('username is incorrect, please, write: /message_to <username>')
         username = None
 
-    with patch_stdout(): 
+    with patch_stdout():
         while True:
             text = await session.prompt_async(">> ") #like input()
-        
+
             if text.startswith('/chat'):
                 try:
                     user = text.split()[1]
-                    host = load_contacts()[user]["ip"]
-                    port = int(load_contacts()[user]["port"])
-                    await connect(host, port, user)
+                    contact = load_contacts()[user]
+                    host = contact["ip"]
+                    port = int(contact["port"])
+                    if contact.get("type") == "server":
+                        await connect_server(host, port, user)
+                    else:
+                        await connect(host, port, user)
                 except IndexError:
                     print("please, write: /message_to <username>")
             elif text.startswith('/quit'):
