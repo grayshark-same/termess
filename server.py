@@ -37,7 +37,6 @@ async def handler(ws):
         clients[username] = ws
         print(f"{username} connected")
 
-
         try:
             async for raw in ws:
                 msg = json.loads(raw)
@@ -49,6 +48,11 @@ async def handler(ws):
                         await ws.send(json.dumps({"pub_key": key}))
                     else:
                         await ws.send(json.dumps({"error": f"{target} not found"}))
+                elif action == "ready":
+                    print(f"queue for {username}: {queue.get(username)}")
+                    for queued in queue.pop(username, []):
+                        await ws.send(json.dumps(queued))
+                    save_json(QUEUE_FILE, queue)
                 elif "to" in msg:
                     to = msg["to"]
                     if to in clients:
@@ -62,10 +66,6 @@ async def handler(ws):
                         save_json(QUEUE_FILE, queue)
         except websockets.exceptions.ConnectionClosedError:
             pass
-        for queued in queue.pop(username, []):
-            await ws.send(json.dumps(queued))
-        if username in queue:
-            save_json(QUEUE_FILE, queue)
     finally:
         if username and username in clients:
             del clients[username]

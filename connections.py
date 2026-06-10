@@ -122,7 +122,7 @@ async def connect_server(host, port, to):
                 return
             their_pub = PublicKey(base64.b64decode(resp["pub_key"]))
             box = Box(my_priv, their_pub)
-            
+            await ws.send(json.dumps({"action": "ready"}))
             await chat_server(ws, to, box)
     except Exception as e:
         print(f'cannot connect to server: {e}')
