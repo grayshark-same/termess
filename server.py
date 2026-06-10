@@ -36,10 +36,7 @@ async def handler(ws):
         save_json(KEYS_FILE, pub_keys)
         clients[username] = ws
         print(f"{username} connected")
-        for queued in queue.pop(username, []):
-            await ws.send(json.dumps(queued))
-        if username in queue:
-            save_json(QUEUE_FILE, queue)
+
 
         try:
             async for raw in ws:
@@ -65,6 +62,10 @@ async def handler(ws):
                         save_json(QUEUE_FILE, queue)
         except websockets.exceptions.ConnectionClosedError:
             pass
+        for queued in queue.pop(username, []):
+            await ws.send(json.dumps(queued))
+        if username in queue:
+            save_json(QUEUE_FILE, queue)
     finally:
         if username and username in clients:
             del clients[username]
