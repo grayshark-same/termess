@@ -41,27 +41,30 @@ async def handler(ws):
         if username in queue:
             save_json(QUEUE_FILE, queue)
 
-        async for raw in ws:
-            msg = json.loads(raw)
-            action = msg.get("action")
-            if action == "get_key":
-                target = msg["username"]
-                key = pub_keys.get(target)
-                if key:
-                    await ws.send(json.dumps({"pub_key": key}))
-                else:
-                    await ws.send(json.dumps({"error": f"{target} not found"}))
-            elif "to" in msg:
-                to = msg["to"]
-                if to in clients:
-                    try:
-                        await clients[to].send(raw)
-                    except websockets.exceptions.ConnectionClosed:
+        try:
+            async for raw in ws:
+                msg = json.loads(raw)
+                action = msg.get("action")
+                if action == "get_key":
+                    target = msg["username"]
+                    key = pub_keys.get(target)
+                    if key:
+                        await ws.send(json.dumps({"pub_key": key}))
+                    else:
+                        await ws.send(json.dumps({"error": f"{target} not found"}))
+                elif "to" in msg:
+                    to = msg["to"]
+                    if to in clients:
+                        try:
+                            await clients[to].send(raw)
+                        except websockets.exceptions.ConnectionClosed:
+                            queue.setdefault(to, []).append(msg)
+                            save_json(QUEUE_FILE, queue)
+                    else:
                         queue.setdefault(to, []).append(msg)
                         save_json(QUEUE_FILE, queue)
-                else:
-                    queue.setdefault(to, []).append(msg)
-                    save_json(QUEUE_FILE, queue)
+        except websockets.exceptions.ConnectionClosedError:
+            pass
     finally:
         if username and username in clients:
             del clients[username]
