@@ -48,8 +48,14 @@ async def handler(ws):
                         await ws.send(json.dumps({"pub_key": key}))
                     else:
                         await ws.send(json.dumps({"error": f"{target} not found"}))
+                elif action == "get_notifications":
+                    messages = queue.get(username, [])
+                    count = {}
+                    for m in messages:
+                        f = m.get("from")
+                        count[f] = count.get(f, 0) + 1
+                    await ws.send(json.dumps(count))
                 elif action == "ready":
-                    print(f"queue for {username}: {queue.get(username)}")
                     for queued in queue.pop(username, []):
                         await ws.send(json.dumps(queued))
                     save_json(QUEUE_FILE, queue)

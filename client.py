@@ -15,6 +15,7 @@ from storage import *
 import urllib.request
 from datetime import datetime, timezone, timedelta
 from prompt_toolkit.patch_stdout import patch_stdout
+from connections import *
 
 first_message = 'welcome_to_termess'
 menu = ''
@@ -40,6 +41,7 @@ completer = NestedCompleter.from_nested_dict({
 
 async def main(username=None):
     print(first_message)
+    notifications = get_notifications()
     session = PromptSession(completer=completer)
     print(f'trying to connect to {username}...') if username else None
     if username:
@@ -155,7 +157,7 @@ def run():
     elif args.command == "contacts":
         print(load_contacts())
     elif args.command == "test":
-        print(int(time.time()))
+        print(asyncio.run(get_notifications()))
     elif args.command == "init":
         username = args.username if args.username else input('please, enter your username: ')
         port = 2727
