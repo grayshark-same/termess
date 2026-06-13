@@ -1,6 +1,6 @@
 # termess
 
-Terminal messenger with P2P connection and E2E encryption (NaCl/X25519).
+Terminal messenger with P2P and relay server support, E2E encryption (NaCl/X25519).
 
 ## Installation
 
@@ -21,9 +21,9 @@ Invoke-RestMethod "https://raw.githubusercontent.com/grayshark-same/termess/main
 termess init
 ```
 
-Enter your username and port (default: 2727). This generates your encryption keys.
+Enter your username, port (default: 2727), and timezone (UTC offset). This generates your encryption keys.
 
-Make sure port `2727` (or your custom port) is open in your firewall:
+For P2P mode, make sure your port is open:
 ```bash
 sudo ufw allow 2727
 ```
@@ -32,14 +32,16 @@ sudo ufw allow 2727
 
 | Command | Description |
 |---|---|
-| `termess init [username] [port]` | Set up username, port and generate keys |
-| `termess start` | Open termess |
+| `termess init [username] [port] [timezone]` | Set up username, port, timezone and generate keys |
+| `termess start` | Open termess (shows unread notifications) |
 | `termess chat <username>` | Chat with contact |
-| `termess add <username> <ip> [port]` | Add contact |
+| `termess add client <username> <ip> [port]` | Add P2P contact |
+| `termess add server <username> <ip> [port]` | Add relay server contact |
 | `termess remove <username>` | Remove contact |
 | `termess contacts` | Show contacts |
 | `termess ip` | Show your external IP |
 | `termess update` | Update termess |
+| `termess server [port]` | Start a relay server |
 
 ### In chat
 
@@ -48,12 +50,23 @@ sudo ufw allow 2727
 | `/chat <username>` | Start chat with contact |
 | `/quit` | Exit chat |
 
-## NAT Warning
+## Connection modes
 
-For P2P to work, the listening side must have a real external IP (not behind CGNAT). Check with your ISP if you have a "white IP". If both sides are behind NAT — use a VPN like Tailscale/ZeroTier.
+### P2P
+Both users run `termess chat <username>`. The first becomes the listener, the second connects automatically. Requires at least one side to have a real external IP (not behind CGNAT).
+
+### Relay server
+Add a contact with type `server` pointing to a running relay server. Both users connect to the server — it routes messages between them. Works behind any NAT. Messages are still encrypted end-to-end (keys are exchanged through the server but never stored in plaintext).
+
+To run your own relay server:
+```
+termess server 2727
+```
 
 ## How it works
 
-Both users run `termess chat <username>`. The first one becomes the server and waits — the second connects automatically. Keys are exchanged automatically on connect, all messages are encrypted end-to-end.
-
-Requires port `2727` (or your custom port) to be open on the listening side.
+- Keys are generated locally on `termess init`
+- On connect, each client registers its public key with the server
+- Before chatting, clients fetch each other's public key from the server and perform X25519 key exchange
+- All messages are encrypted with NaCl Box (XSalsa20-Poly1305) — the server only sees ciphertext
+- Offline messages are queued on the server and delivered when the recipient reconnects
