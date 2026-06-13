@@ -41,7 +41,10 @@ completer = NestedCompleter.from_nested_dict({
 
 async def main(username=None):
     print(first_message)
-    notifications = get_notifications()
+    notifications = await get_notifications()
+    if notifications:
+        for sender, count in notifications.items():
+            print(f"  {sender}: {count} new messages")
     session = PromptSession(completer=completer)
     print(f'trying to connect to {username}...') if username else None
     if username:
@@ -112,6 +115,8 @@ def run():
 
     subparsers.add_parser("ip", help="show your ip")
 
+    subparsers.add_parser("notifications", aliases=["not"], help="show your notifications")
+
     init = subparsers.add_parser("init")
     init.add_argument("username", nargs="?", default=None)
     init.add_argument("port", nargs="?", default=None)
@@ -149,6 +154,13 @@ def run():
             remove_contact(username)
         except:
             pass
+    elif args.command == ["not", 'notifications']:
+        result = None
+        notifications = get_notifications()
+        for name, count in notifications.items():
+            result = str(result) + f'{name}: {count}\n'
+        text = result or 'you have no notifications'
+        print(text)
     elif args.command == "add":
         add_contact(Type=args.type_of_connection, un=args.username, ip=args.ip, port=args.port)
     elif args.command == "ip":

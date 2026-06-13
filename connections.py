@@ -140,27 +140,19 @@ async def get_notifications():
     my_pub, _ = get_keys()
     me = load_config()["username"]
     result = {}
-    print(1)
     for name, contact in load_contacts().items():
         if contact.get("type") != "server":
             continue
         host, port = contact["ip"], contact["port"]
-        print(2)
         try:
             async with websockets.connect(f"ws://{host}:{port}") as ws:
-                print(3)
                 await ws.send(json.dumps({
                     "action": "register",
                     "from": me,
                     "pub_key": base64.b64encode(bytes(my_pub)).decode()
                 }))
-                print(4)
-                await ws.send(json.dumps({"action": "get_notifications", 'username':me}))
-                print(5)
-                resp = json.loads(await ws.recv())
-                result[name] = resp  # {sender: count}
-                print(6)
+                await ws.send(json.dumps({"action": "get_notifications"}))
+                result.update(json.loads(await ws.recv()))
         except Exception:
             pass
-            print(7)
     return result  # {server_name: {sender: count}
