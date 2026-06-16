@@ -1,6 +1,7 @@
 #!/bin/bash
 
-echo "Installing termess..."
+VERSION=${1:-main}
+echo "Installing termess ${VERSION}..."
 
 install_python() {
     if command -v apt-get &> /dev/null; then
@@ -25,7 +26,7 @@ if command -v apt-get &> /dev/null; then
 fi
 
 python3 -m venv ~/.termess-venv
-~/.termess-venv/bin/pip install git+https://github.com/grayshark-same/termess.git
+~/.termess-venv/bin/pip install git+https://github.com/grayshark-same/termess.git@$VERSION
 
 mkdir -p ~/.local/bin
 ln -sf ~/.termess-venv/bin/termess ~/.local/bin/termess

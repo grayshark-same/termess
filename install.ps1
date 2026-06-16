@@ -1,4 +1,5 @@
-Write-Host "Installing termess..."
+param([string]$Version = "main")
+Write-Host "Installing termess $Version..."
 
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Host "Run as Administrator for Python installation"
@@ -37,7 +38,7 @@ if (-not (Test-Path "$venv\Scripts\pip.exe")) {
     exit 1
 }
 
-& "$venv\Scripts\pip" install https://github.com/grayshark-same/termess/archive/refs/heads/main.zip
+& "$venv\Scripts\pip" install "git+https://github.com/grayshark-same/termess.git@$Version"
 
 $localBin = "$HOME\.local\bin"
 New-Item -ItemType Directory -Force -Path $localBin | Out-Null
