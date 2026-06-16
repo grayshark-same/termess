@@ -187,10 +187,15 @@ def run():
         except:
             tz = 0
         # tz = timezone(timedelta(hours=hours))
-        priv_key = PrivateKey.generate()
-        pub_key = priv_key.public_key
-        pub_key_str = base64.b64encode(bytes(pub_key)).decode()
-        priv_key_str = base64.b64encode(bytes(priv_key)).decode()
+        existing = load_config()
+        if existing.get("pub_key") and existing.get("priv_key"):
+            pub_key_str = existing["pub_key"]
+            priv_key_str = existing["priv_key"]
+        else:
+            priv_key = PrivateKey.generate()
+            pub_key = priv_key.public_key
+            pub_key_str = base64.b64encode(bytes(pub_key)).decode()
+            priv_key_str = base64.b64encode(bytes(priv_key)).decode()
         save_config({'username': username, 'port': port, 'pub_key': pub_key_str, "priv_key": priv_key_str, 'tz': tz})
         import subprocess
         script = str(BASE_DIR / "not_collector.py")
