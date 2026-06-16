@@ -113,9 +113,8 @@ def run():
     subparsers.add_parser("contacts", help="show contacts")
     subparsers.add_parser("test")
     subparsers.add_parser("update")
-
+    subparsers.add_parser("version", help="show version")
     subparsers.add_parser("ip", help="show your ip")
-
     subparsers.add_parser("notifications", aliases=["not"], help="show your notifications")
 
     init = subparsers.add_parser("init")
@@ -129,6 +128,7 @@ def run():
     connect_cmd = subparsers.add_parser("connect")
     connect_cmd.add_argument("username")
     connect_cmd.add_argument("port", type=int, default=load_config()["port"], nargs="?")
+    
     
     server_cmd = subparsers.add_parser("server", help="start server")
     server_cmd.add_argument("action", nargs="?", choices=["start", "stop", "restart", "logs"], default="start")
@@ -165,6 +165,9 @@ def run():
         print(text)
     elif args.command == "add":
         add_contact(Type=args.type_of_connection, un=args.username, ip=args.ip, port=args.port)
+    elif args.command == "version":
+        from importlib.metadata import version
+        print(version("termess"))
     elif args.command == "ip":
         ip = urllib.request.urlopen('https://ifconfig.me').read().decode()
         print(ip)        
