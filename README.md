@@ -6,13 +6,13 @@ Terminal messenger with P2P and relay server support, E2E encryption (NaCl/X2551
 
 **Linux (Debian/Ubuntu, Arch, Fedora)**
 ```bash
-curl -sSL https://raw.githubusercontent.com/grayshark-same/termess/main/install.sh | bash -s v0.1.0
+curl -sSL https://raw.githubusercontent.com/grayshark-same/termess/main/install.sh | bash -s v1.0.0
 source ~/.bashrc
 ```
 
 **Windows**
 ```powershell
-Invoke-RestMethod "https://raw.githubusercontent.com/grayshark-same/termess/main/install.ps1" -OutFile install.ps1; .\install.ps1 -Version v0.1.0
+Invoke-RestMethod "https://raw.githubusercontent.com/grayshark-same/termess/main/install.ps1" -OutFile install.ps1; .\install.ps1 -Version v1.0.0
 ```
 
 ## Setup
