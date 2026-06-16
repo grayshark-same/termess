@@ -18,4 +18,4 @@ async def run():
         last_count = current_count
         await asyncio.sleep(60)
 
-# asyncio.run(run())
+asyncio.run(run())
