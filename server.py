@@ -83,6 +83,8 @@ async def main(port=2727):
         await asyncio.Future()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import sys
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 2727
+    asyncio.run(main(port))
  
  

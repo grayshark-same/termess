@@ -3,6 +3,7 @@ import base64
 from pathlib import Path
 from nacl.public import PrivateKey, PublicKey
 import ipaddress
+import sys, os
 
 BASE_DIR = Path(__file__).parent
 
@@ -82,3 +83,17 @@ def is_ipv4(ip_str):
         return ip_obj.version == 4
     except ValueError:
         return False
+    
+def beep():
+    wav = BASE_DIR / "notification.wav"
+    if not wav.exists():
+        return
+    try:
+        if sys.platform == 'win32':
+            import winsound
+            winsound.PlaySound(str(wav), winsound.SND_FILENAME | winsound.SND_ASYNC)
+        else:
+            import subprocess
+            subprocess.Popen(['aplay', '-q', str(wav)])
+    except Exception:
+        pass

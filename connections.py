@@ -5,10 +5,25 @@ from nacl.public import PrivateKey, PublicKey, Box
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 from storage import *
-from prompt_toolkit.completion import NestedCompleter 
+from prompt_toolkit.completion import NestedCompleter
 import time
 from datetime import datetime, timezone, timedelta
 import json
+import sys
+
+def beep():
+    wav = BASE_DIR / "notification.wav"
+    if not wav.exists():
+        return
+    try:
+        if sys.platform == 'win32':
+            import winsound
+            winsound.PlaySound(str(wav), winsound.SND_FILENAME | winsound.SND_ASYNC)
+        else:
+            import subprocess
+            subprocess.Popen(['aplay', '-q', str(wav)])
+    except Exception:
+        pass
 
 async def exchange_keys(ws):
     # загрузить свой приватный ключ
@@ -136,16 +151,42 @@ async def connect(host, port, username):
         print("waiting for connecting")
         await listen(port, username)
 
+# async def get_notifications():
+#     my_pub, _ = get_keys()
+#     me = load_config()["username"]
+#     result = {}
+#     for name, contact in load_contacts().items():
+#         if contact.get("type") != "server":
+#             continue
+#         host, port = contact["ip"], contact["port"]
+#         try:
+#             async with websockets.connect(f"ws://{host}:{port}") as ws:
+#                 await ws.send(json.dumps({
+#                     "action": "register",
+#                     "from": me,
+#                     "pub_key": base64.b64encode(bytes(my_pub)).decode()
+#                 }))
+#                 await ws.send(json.dumps({"action": "get_notifications"}))
+#                 result.update(json.loads(await ws.recv()))
+#         except Exception:
+#             pass
+#     return result  # {sender: count}
+
 async def get_notifications():
     my_pub, _ = get_keys()
     me = load_config()["username"]
     result = {}
+    servers = []
     for name, contact in load_contacts().items():
         if contact.get("type") != "server":
             continue
         host, port = contact["ip"], contact["port"]
+        servers.append(f"{host}:{port}")
+    servers = list(set(servers))
+    # print(servers)
+    for server in servers:
         try:
-            async with websockets.connect(f"ws://{host}:{port}") as ws:
+            async with websockets.connect(f"ws://{server}") as ws:
                 await ws.send(json.dumps({
                     "action": "register",
                     "from": me,
@@ -155,4 +196,4 @@ async def get_notifications():
                 result.update(json.loads(await ws.recv()))
         except Exception:
             pass
-    return result  # {server_name: {sender: count}
+    return result  # {sender: count}
