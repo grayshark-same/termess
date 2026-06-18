@@ -1,7 +1,10 @@
 import asyncio
 import websockets
 import json
+import base64
 from pathlib import Path
+from nacl.signing import VerifyKey
+from nacl.exceptions import BadSignatureError
 
 BASE_DIR = Path(__file__).parent
 KEYS_FILE = BASE_DIR / "server_keys.json"
@@ -19,7 +22,8 @@ def save_json(path, data):
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
 
-pub_keys = load_json(KEYS_FILE)
+pub_keys = load_json(KEYS_FILE)   # username -> encryption pub_key
+verify_keys = load_json(BASE_DIR / "server_verify_keys.json")  # username -> verify_key
 queue = load_json(QUEUE_FILE)
 
 async def handler(ws):
@@ -32,6 +36,20 @@ async def handler(ws):
         if msg.get("action") != "register":
             return
         username = msg["from"]
+        if "verify_key" in msg and "signature" in msg:
+            incoming_vk = msg["verify_key"]
+            if username in verify_keys and verify_keys[username] != incoming_vk:
+                await ws.send(json.dumps({"error": "key mismatch — wrong identity"}))
+                return
+            try:
+                vk = VerifyKey(base64.b64decode(incoming_vk))
+                vk.verify(username.encode(), base64.b64decode(msg["signature"]))
+            except BadSignatureError:
+                await ws.send(json.dumps({"error": "invalid signature"}))
+                return
+            if username not in verify_keys:
+                verify_keys[username] = incoming_vk
+                save_json(BASE_DIR / "server_verify_keys.json", verify_keys)
         pub_keys[username] = msg["pub_key"]
         save_json(KEYS_FILE, pub_keys)
         clients[username] = ws

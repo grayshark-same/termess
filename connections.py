@@ -2,6 +2,7 @@ import asyncio
 import websockets
 import base64
 from nacl.public import PrivateKey, PublicKey, Box
+from nacl.signing import VerifyKey
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 from storage import *
@@ -121,13 +122,17 @@ async def listen(port, username):
 
 async def connect_server(host, port, to):
     my_pub, my_priv = get_keys()
+    signing_key = get_signing_key()
     me = load_config()["username"]
     try:
         async with websockets.connect(f"ws://{host}:{port}") as ws:
+            signature = base64.b64encode(signing_key.sign(me.encode()).signature).decode()
             await ws.send(json.dumps({
                 "action": "register",
                 "from": me,
-                "pub_key": base64.b64encode(bytes(my_pub)).decode()
+                "pub_key": base64.b64encode(bytes(my_pub)).decode(),
+                "verify_key": base64.b64encode(bytes(signing_key.verify_key)).decode(),
+                "signature": signature
             }))
             
             await ws.send(json.dumps({"action": "get_key", "username": to}))
@@ -174,6 +179,7 @@ async def connect(host, port, username):
 
 async def get_notifications():
     my_pub, _ = get_keys()
+    signing_key = get_signing_key()
     me = load_config()["username"]
     result = {}
     servers = []
@@ -183,14 +189,16 @@ async def get_notifications():
         host, port = contact["ip"], contact["port"]
         servers.append(f"{host}:{port}")
     servers = list(set(servers))
-    # print(servers)
     for server in servers:
         try:
             async with websockets.connect(f"ws://{server}") as ws:
+                signature = base64.b64encode(signing_key.sign(me.encode()).signature).decode()
                 await ws.send(json.dumps({
                     "action": "register",
                     "from": me,
-                    "pub_key": base64.b64encode(bytes(my_pub)).decode()
+                    "pub_key": base64.b64encode(bytes(my_pub)).decode(),
+                    "verify_key": base64.b64encode(bytes(signing_key.verify_key)).decode(),
+                    "signature": signature
                 }))
                 await ws.send(json.dumps({"action": "get_notifications"}))
                 result.update(json.loads(await ws.recv()))

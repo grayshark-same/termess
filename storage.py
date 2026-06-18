@@ -2,6 +2,7 @@ import json
 import base64
 from pathlib import Path
 from nacl.public import PrivateKey, PublicKey
+from nacl.signing import SigningKey, VerifyKey
 import ipaddress
 import sys, os
 
@@ -55,6 +56,10 @@ def get_keys():
     priv_key = PrivateKey(base64.b64decode(conf['priv_key']))
     pub_key = PublicKey(base64.b64decode(conf['pub_key']))
     return (pub_key, priv_key)
+
+def get_signing_key():
+    conf = load_config()
+    return SigningKey(base64.b64decode(conf['signing_key']))
 
 def add_contact(Type="client", un=None, ip=None, port=None):
     try:

@@ -8,6 +8,8 @@ import websockets
 from connections import listen, connect, connect_server, chat
 import sys 
 from nacl.public import PrivateKey, PublicKey, Box
+from nacl.signing import SigningKey, VerifyKey
+from nacl.encoding import Base64Encoder
 import ipaddress
 import base64
 import time
@@ -199,7 +201,12 @@ def run():
             pub_key = priv_key.public_key
             pub_key_str = base64.b64encode(bytes(pub_key)).decode()
             priv_key_str = base64.b64encode(bytes(priv_key)).decode()
-        save_config({'username': username, 'port': port, 'pub_key': pub_key_str, "priv_key": priv_key_str, 'tz': tz})
+        if existing.get("signing_key"):
+            signing_key_str = existing["signing_key"]
+        else:
+            signing_key = SigningKey.generate()
+            signing_key_str = base64.b64encode(bytes(signing_key)).decode()
+        save_config({'username': username, 'port': port, 'pub_key': pub_key_str, "priv_key": priv_key_str, 'tz': tz, 'signing_key': signing_key_str})
         import subprocess
         script = str(BASE_DIR / "not_collector.py")
         if sys.platform == "win32":
